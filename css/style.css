@@ -24,7 +24,7 @@ html, body {
 
 body {
   font-family: 'Nunito', sans-serif;
-  background: var(--cream);
+  background: var(--cream) url("../images/nekko-background.png") center / cover fixed no-repeat;
   color: var(--ink);
   min-height: 100vh;
   display: flex;
@@ -45,7 +45,7 @@ h1, h2, h3, .display {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.05;
+  opacity: 0.14;
   background-image: radial-gradient(circle at 10% 20%, var(--teal) 3px, transparent 3px),
                      radial-gradient(circle at 80% 60%, var(--gold) 3px, transparent 3px),
                      radial-gradient(circle at 40% 85%, var(--teal) 3px, transparent 3px),
@@ -1140,3 +1140,19 @@ canvas#game-canvas {
   margin-bottom: 12px;
   min-height: 24px;
 }
+
+/* Nekko artwork background + readable translucent surfaces */
+body::before { content:""; position:fixed; inset:0; z-index:0; pointer-events:none; background:rgba(20,35,18,.28); }
+.topbar, .feed-shell, .profile-shell, .games-shell, .chat-shell, .game-screen { position:relative; z-index:1; }
+.feed-shell, .profile-shell, .games-shell, .game-screen { background:rgba(251,246,233,.86); border-radius:22px; margin-top:24px; margin-bottom:24px; }
+.text-only-note { font-size:13px; color:var(--teal-dark); font-weight:700; }
+.user-link { color:var(--teal-dark); text-decoration:none; font-weight:800; }
+.user-link:hover { text-decoration:underline; }
+.profile-shell { width:min(560px, calc(100% - 32px)); margin-left:auto; margin-right:auto; padding:28px 16px; }
+.profile-card { background:rgba(251,246,233,.94); border:1px solid var(--line); box-shadow:var(--shadow); border-radius:var(--radius); padding:34px; text-align:center; }
+.profile-avatar { width:92px; height:92px; border-radius:50%; display:grid; place-items:center; margin:0 auto 16px; background:var(--teal); color:white; font-family:Fredoka,sans-serif; font-size:42px; }
+.profile-handle { color:var(--teal); font-weight:700; margin:6px 0 16px; }
+.profile-bio { min-height:44px; white-space:pre-wrap; }
+.profile-actions { display:grid; gap:10px; margin-top:24px; }
+.profile-actions .btn { text-decoration:none; display:block; }
+.profile-card textarea { width:100%; min-height:100px; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; font:inherit; resize:vertical; }

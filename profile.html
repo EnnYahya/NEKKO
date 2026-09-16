@@ -1,10 +1,161 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nekko — Profile</title><link rel="stylesheet" href="css/style.css"></head><body><div class="paw-field"></div>
-<div class="topbar"><div class="topbar-title">Nekko</div><div class="topbar-user"><a class="nav-link" href="dashboard.html">🏠 Home</a><a class="nav-link" href="chat.html">💬 Chat</a><button id="logout-btn">Log Out</button></div></div>
-<main class="profile-shell"><section class="profile-card"><div class="profile-avatar" id="avatar">?</div><h1 id="name">Loading…</h1><p class="profile-handle" id="handle"></p><p class="profile-bio" id="bio"></p><div class="profile-actions" id="actions"></div></section></main><div class="toast" id="toast"></div>
-<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script><script src="js/firebase-config.js"></script><script src="js/auth.js"></script><script src="js/chat.js"></script><script src="js/games.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nekko — Profile</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="paw-field"></div>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <div class="brand-mark"><img src="images/logo-placeholder.png" alt="Nekko logo" onerror="this.style.display='none'; this.parentElement.textContent='N';"></div>
+    Nekko
+  </div>
+  <div class="topbar-user">
+    <a class="nav-link" href="dashboard.html">🏠 Home</a>
+    <a class="nav-link" href="games.html">🎮 Games</a>
+    <a class="nav-link" href="chat.html">💬 Chat</a>
+    <button id="logout-btn">Log Out</button>
+  </div>
+</div>
+
+<div class="profile-shell">
+
+  <div id="not-found" class="profile-not-found" style="display:none;">
+    <div class="paw-big" style="font-size:44px; margin-bottom:10px;">🐾</div>
+    <h2>User not found</h2>
+    <p>No one on Nekko has that username.</p>
+  </div>
+
+  <div id="profile-card" class="profile-card" style="display:none;">
+    <div class="profile-avatar" id="avatar"></div>
+    <div class="profile-username" id="username-display"></div>
+
+    <div id="view-mode">
+      <div class="profile-bio" id="bio-display"></div>
+      <div class="profile-actions" id="visitor-actions" style="display:none;">
+        <a class="btn" id="message-btn" href="#">💬 Message</a>
+        <a class="btn btn-secondary" id="play-chess-btn" href="#">♟️ Play Chess</a>
+      </div>
+      <button class="btn btn-secondary" id="edit-btn" style="display:none;">Edit Profile</button>
+    </div>
+
+    <div id="edit-mode" class="profile-edit" style="display:none;">
+      <textarea id="bio-input" maxlength="280" placeholder="Tell people a little about yourself…"></textarea>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="save-bio-btn">Save</button>
+        <button class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
 <script>
-const username=new URLSearchParams(location.search).get("user");let me,meProfile,targetUid,target;
-function toast(m){let e=document.getElementById("toast");e.textContent=m;e.className="toast show";setTimeout(()=>e.className="toast",2000)}
-requireLogin(async u=>{me=u;const mine=await db.collection("users").doc(u.uid).get();meProfile=mine.data();if(!username){targetUid=u.uid;target=meProfile}else{const x=await db.collection("usernames").doc(username.toLowerCase()).get();if(!x.exists){document.getElementById("name").textContent="User not found";return}targetUid=x.data().uid;const p=await db.collection("users").doc(targetUid).get();target=p.data()}document.getElementById("name").textContent=target.displayName||target.username;document.getElementById("handle").textContent="@"+target.username;document.getElementById("bio").textContent=target.bio||"No bio yet.";document.getElementById("avatar").textContent=(target.username||"?")[0].toUpperCase();const a=document.getElementById("actions");if(targetUid===u.uid){a.innerHTML='<a class="btn" href="profile-edit.html">Edit Profile</a>'}else{a.innerHTML='<button class="btn" id="chat-btn">💬 Chat</button><button class="btn btn-secondary" id="chess-btn">♟ Play Chess</button>';document.getElementById("chat-btn").onclick=async()=>{const id=await startConversationByUsername(me,meProfile,target.username);location="chat.html?conversation="+encodeURIComponent(id)};document.getElementById("chess-btn").onclick=async()=>{const id=await createOrOpenChessGame(me,meProfile,targetUid,target);location="chess.html?game="+encodeURIComponent(id)}}});
-document.getElementById("logout-btn").onclick=async()=>{await handleLogout();location="index.html"}
-</script></body></html>
+  function showToast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast show";
+    setTimeout(() => t.className = "toast", 2000);
+  }
+
+  function initials(username) {
+    return (username || "?").charAt(0).toUpperCase();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  let profileUid = null;
+  let isOwnProfile = false;
+
+  function enterEditMode(currentBio) {
+    document.getElementById("view-mode").style.display = "none";
+    document.getElementById("edit-mode").style.display = "block";
+    document.getElementById("bio-input").value = currentBio || "";
+  }
+
+  function exitEditMode() {
+    document.getElementById("view-mode").style.display = "block";
+    document.getElementById("edit-mode").style.display = "none";
+  }
+
+  document.getElementById("cancel-edit-btn").addEventListener("click", exitEditMode);
+
+  document.getElementById("save-bio-btn").addEventListener("click", async () => {
+    const newBio = document.getElementById("bio-input").value.trim();
+    try {
+      await db.collection("users").doc(profileUid).update({ bio: newBio });
+      document.getElementById("bio-display").textContent = newBio || "No bio yet.";
+      document.getElementById("bio-display").className = newBio ? "profile-bio" : "profile-bio empty";
+      exitEditMode();
+      showToast("Profile updated!");
+    } catch (err) {
+      showToast(err.message);
+    }
+  });
+
+  document.getElementById("edit-btn").addEventListener("click", () => {
+    enterEditMode(document.getElementById("bio-display").dataset.raw || "");
+  });
+
+  document.getElementById("logout-btn").addEventListener("click", async () => {
+    await handleLogout();
+    window.location.href = "index.html";
+  });
+
+  requireLogin(async (user) => {
+    const params = new URLSearchParams(window.location.search);
+    const username = (params.get("u") || "").trim().toLowerCase();
+
+    if (!username) {
+      window.location.href = "dashboard.html";
+      return;
+    }
+
+    const usernameDoc = await db.collection("usernames").doc(username).get();
+    if (!usernameDoc.exists) {
+      document.getElementById("not-found").style.display = "block";
+      return;
+    }
+
+    profileUid = usernameDoc.data().uid;
+    isOwnProfile = profileUid === user.uid;
+
+    const profileDoc = await db.collection("users").doc(profileUid).get();
+    const profile = profileDoc.data() || { username };
+
+    document.getElementById("avatar").textContent = initials(profile.username);
+    document.getElementById("username-display").textContent = "@" + profile.username;
+
+    const bioEl = document.getElementById("bio-display");
+    bioEl.dataset.raw = profile.bio || "";
+    bioEl.textContent = profile.bio || "No bio yet.";
+    bioEl.className = profile.bio ? "profile-bio" : "profile-bio empty";
+
+    if (isOwnProfile) {
+      document.getElementById("edit-btn").style.display = "block";
+    } else {
+      document.getElementById("visitor-actions").style.display = "flex";
+      document.getElementById("message-btn").href = `chat.html?u=${encodeURIComponent(profile.username)}`;
+      document.getElementById("play-chess-btn").href = `chess.html?uid=${encodeURIComponent(profileUid)}&name=${encodeURIComponent(profile.username)}`;
+    }
+
+    document.getElementById("profile-card").style.display = "block";
+  });
+</script>
+</body>
+</html>

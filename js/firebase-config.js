@@ -8,12 +8,12 @@
 // ============================================================
 
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY_HERE",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_YOUR_PROJECT_ID",
-  storageBucket: "PASTE_YOUR_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_YOUR_SENDER_ID",
-  appId: "PASTE_YOUR_APP_ID"
+  apiKey: "AIzaSyC3Bd8o7Kekey70acV_6bIslq9Cb3eggu8",
+  authDomain: "nekko-5694a.firebaseapp.com",
+  projectId: "nekko-5694a",
+  storageBucket: "nekko-5694a.firebasestorage.app",
+  messagingSenderId: "254996957921",
+  appId: "1:254996957921:web:e370d36c750e895aed85a0"
 };
 
 // Initialize Firebase (using the compat SDK loaded via <script> tags in HTML)

@@ -20,7 +20,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-const storage = firebase.storage();
 
 // Internal domain used to turn usernames into fake emails Firebase Auth needs.
 // Users never see this — they only ever type a username.

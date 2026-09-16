@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nekko — Snake</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="paw-field"></div>
+
+<div class="topbar">
+  <div class="topbar-title">
+    <div class="brand-mark"><img src="images/logo-placeholder.png" alt="Nekko logo" onerror="this.style.display='none'; this.parentElement.textContent='N';"></div>
+    Nekko
+  </div>
+  <div class="topbar-user">
+    <a class="nav-link" href="games.html">← Games</a>
+  </div>
+</div>
+
+<div class="game-screen">
+  <h1 style="margin-bottom:14px;">🐍 Snake</h1>
+
+  <div class="game-hud">
+    <div class="score-box">Score<br><span class="num" id="score-num">0</span></div>
+    <div class="score-box">Best<br><span class="num" id="best-num">0</span></div>
+  </div>
+
+  <div class="game-canvas-wrap">
+    <canvas id="game-canvas" width="400" height="400"></canvas>
+    <div class="game-overlay" id="overlay">
+      <h2 id="overlay-title">Snake</h2>
+      <p id="overlay-msg">Use arrow keys or swipe to move</p>
+      <button class="btn" id="overlay-btn" style="width:auto; padding:10px 26px;">Start</button>
+    </div>
+  </div>
+
+  <div class="mobile-dpad">
+    <div></div><button id="dpad-up">↑</button><div></div>
+    <button id="dpad-left">←</button><div></div><button id="dpad-right">→</button>
+    <div></div><button id="dpad-down">↓</button><div></div>
+  </div>
+
+  <div class="game-controls-hint">Arrow keys / WASD on desktop, swipe or D-pad on mobile.</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/scores.js"></script>
+<script>
+  const canvas = document.getElementById("game-canvas");
+  const ctx = canvas.getContext("2d");
+  const GRID = 20;
+  const CELLS = canvas.width / GRID;
+
+  let snake, direction, nextDirection, food, score, loopId, running = false;
+  let currentUser = null;
+
+  function resetGame() {
+    snake = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
+    direction = "right";
+    nextDirection = "right";
+    score = 0;
+    placeFood();
+    document.getElementById("score-num").textContent = "0";
+  }
+
+  function placeFood() {
+    let valid = false;
+    while (!valid) {
+      food = { x: Math.floor(Math.random() * CELLS), y: Math.floor(Math.random() * CELLS) };
+      valid = !snake.some(s => s.x === food.x && s.y === food.y);
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = "#3A2E22";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#A63D40";
+    ctx.beginPath();
+    ctx.arc(food.x * GRID + GRID/2, food.y * GRID + GRID/2, GRID/2.5, 0, Math.PI*2);
+    ctx.fill();
+
+    snake.forEach((seg, i) => {
+      ctx.fillStyle = i === 0 ? "#C9974C" : "#1F6F6B";
+      ctx.fillRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2);
+    });
+  }
+
+  function step() {
+    direction = nextDirection;
+    const head = { ...snake[0] };
+    if (direction === "up") head.y--;
+    if (direction === "down") head.y++;
+    if (direction === "left") head.x--;
+    if (direction === "right") head.x++;
+
+    const hitWall = head.x < 0 || head.x >= CELLS || head.y < 0 || head.y >= CELLS;
+    const hitSelf = snake.some(s => s.x === head.x && s.y === head.y);
+
+    if (hitWall || hitSelf) {
+      endGame();
+      return;
+    }
+
+    snake.unshift(head);
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      document.getElementById("score-num").textContent = score;
+      placeFood();
+    } else {
+      snake.pop();
+    }
+    draw();
+  }
+
+  async function endGame() {
+    running = false;
+    clearInterval(loopId);
+    let msg = `Score: ${score}`;
+    if (currentUser) {
+      const isRecord = await saveHighScoreIfBetter(currentUser.uid, "snake", score);
+      const best = await getHighScore(currentUser.uid, "snake");
+      document.getElementById("best-num").textContent = best;
+      if (isRecord) msg += " — New best! 🎉";
+    }
+    document.getElementById("overlay-title").textContent = "Game Over";
+    document.getElementById("overlay-msg").textContent = msg;
+    document.getElementById("overlay-btn").textContent = "Play Again";
+    document.getElementById("overlay").classList.add("show");
+  }
+
+  function startGame() {
+    resetGame();
+    draw();
+    document.getElementById("overlay").classList.remove("show");
+    running = true;
+    clearInterval(loopId);
+    loopId = setInterval(step, 120);
+  }
+
+  function setDirection(dir) {
+    const opposites = { up: "down", down: "up", left: "right", right: "left" };
+    if (opposites[dir] !== direction) nextDirection = dir;
+  }
+
+  document.addEventListener("keydown", (e) => {
+    const map = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right",
+                  w: "up", s: "down", a: "left", d: "right" };
+    if (map[e.key]) { e.preventDefault(); setDirection(map[e.key]); }
+  });
+
+  document.getElementById("dpad-up").addEventListener("click", () => setDirection("up"));
+  document.getElementById("dpad-down").addEventListener("click", () => setDirection("down"));
+  document.getElementById("dpad-left").addEventListener("click", () => setDirection("left"));
+  document.getElementById("dpad-right").addEventListener("click", () => setDirection("right"));
+
+  // Swipe controls
+  let touchStartX = 0, touchStartY = 0;
+  canvas.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  });
+  canvas.addEventListener("touchend", (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setDirection(dx > 0 ? "right" : "left");
+    } else {
+      setDirection(dy > 0 ? "down" : "up");
+    }
+  });
+
+  document.getElementById("overlay-btn").addEventListener("click", startGame);
+
+  requireLogin(async (user) => {
+    currentUser = user;
+    const best = await getHighScore(user.uid, "snake");
+    document.getElementById("best-num").textContent = best;
+  });
+
+  resetGame();
+  draw();
+</script>
+</body>
+</html>

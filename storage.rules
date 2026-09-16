@@ -1,0 +1,36 @@
+// ============================================================
+// FIREBASE STORAGE SECURITY RULES
+// ============================================================
+// Copy this into: Firebase Console > Storage > Rules tab > paste > Publish
+// (Storage must be enabled first — see SETUP.md Part C)
+// ============================================================
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Post media (images/videos): anyone logged in can view all posts'
+    // media (needed for the public feed), but you can only upload into
+    // YOUR OWN folder, and files are capped at 25MB.
+    match /posts/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 25 * 1024 * 1024
+                   && (request.resource.contentType.matches('image/.*')
+                       || request.resource.contentType.matches('video/.*'));
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Story media: same rules as post media, separate folder.
+    match /stories/{userId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < 25 * 1024 * 1024
+                   && (request.resource.contentType.matches('image/.*')
+                       || request.resource.contentType.matches('video/.*'));
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

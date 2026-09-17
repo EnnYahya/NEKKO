@@ -18,6 +18,7 @@
     <a class="nav-link" href="games.html">🎮 Games</a>
     <a class="nav-link" href="chat.html">💬 Chat</a>
     <a class="nav-link" id="my-profile-link" href="#">👤 My Profile</a>
+    <a class="nav-link" id="admin-link" href="admin.html" style="display:none;">🛡️ Admin</a>
     <span id="welcome-text">Welcome!</span>
     <button id="logout-btn">Log Out</button>
   </div>
@@ -83,6 +84,9 @@
         <div class="post-actions">
           <button class="post-action-btn" onclick="toggleComments('${post.id}')">💬 ${post.commentCount || 0} Comments</button>
           <button class="post-action-btn" onclick="shareThisPost('${post.id}')">🔗 Share</button>
+          ${(currentUser && (post.authorId === currentUser.uid || (currentProfile && currentProfile.isAdmin)))
+            ? `<button class="post-action-btn" onclick="deleteThisPost('${post.id}')">🗑️ Delete</button>`
+            : ""}
         </div>
         <div class="comments-section ${isOpen ? "show" : ""}" id="comments-${post.id}">
           <div id="comments-list-${post.id}">${isOpen && commentsCache[post.id] ? commentsCache[post.id].map(renderComment).join("") : ""}</div>
@@ -139,6 +143,16 @@
     showToast(copied ? "Link copied!" : "Link ready to share");
   };
 
+  window.deleteThisPost = async function(postId) {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    try {
+      await deletePost(postId);
+      showToast("Post deleted.");
+    } catch (err) {
+      showToast(err.message);
+    }
+  };
+
   let hasScrolledToSharedPost = false;
 
   requireLogin(async (user) => {
@@ -147,6 +161,9 @@
     currentProfile = doc.data() || { username: "friend" };
     document.getElementById("welcome-text").textContent = "Hey, " + currentProfile.username + "!";
     document.getElementById("my-profile-link").href = "profile.html?uid=" + user.uid;
+    if (currentProfile.isAdmin) {
+      document.getElementById("admin-link").style.display = "inline";
+    }
 
     listenToFeed((posts) => {
       const feedEl = document.getElementById("feed");

@@ -11,6 +11,13 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // True only for the account whose users/{uid} doc has isAdmin: true —
+    // set automatically at signup for the account named exactly "admin".
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     // Usernames collection: anyone logged out can check availability
     // during signup, but only the signup process itself can create one,
     // and nobody can edit/delete a taken username.
@@ -52,7 +59,8 @@ service cloud.firestore {
          // not to an arbitrary number.
          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount'])
              && request.resource.data.commentCount == resource.data.commentCount + 1));
-      allow delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+      allow delete: if request.auth != null &&
+        (request.auth.uid == resource.data.authorId || isAdmin());
 
       // Comments: anyone logged in can read/add; only the comment's
       // own author can edit/delete it.

@@ -65,8 +65,17 @@
 
   function render() {
     boardEl.innerHTML = "";
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
+    // Board logic always works in absolute board coordinates (row 0 = black's
+    // back rank). For display only, if I'm playing black, flip both axes so
+    // my own pieces appear at the bottom of MY screen — my opponent (white)
+    // still sees the normal orientation on theirs. onSquareClick always gets
+    // the real board coordinates, so nothing about move logic changes.
+    const flip = myColor === "b";
+    for (let displayR = 0; displayR < 8; displayR++) {
+      for (let displayC = 0; displayC < 8; displayC++) {
+        const r = flip ? 7 - displayR : displayR;
+        const c = flip ? 7 - displayC : displayC;
+
         const square = document.createElement("div");
         const isLight = (r + c) % 2 === 0;
         square.className = `chess-square ${isLight ? "light" : "dark"}`;
@@ -139,7 +148,7 @@
     };
     if (status === "checkmate") {
       const winnerColor = turn === "w" ? "b" : "w";
-      const winnerUid = winnerColor === matchData.whiteId ? matchData.whiteId : matchData.blackId;
+      const winnerUid = winnerColor === "w" ? matchData.whiteId : matchData.blackId;
       update.status = "finished";
       update.result = "win-" + winnerUid;
     } else if (status === "stalemate") {

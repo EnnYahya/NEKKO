@@ -20,10 +20,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
-// Note: Firebase Storage is intentionally NOT initialized here.
-// Storage's free tier requires the Blaze (pay-as-you-go) billing plan,
-// so this app sticks to text-only posts/chat/profiles, which only need
-// Auth + Firestore — both fully free on the Spark plan.
 
 // Internal domain used to turn usernames into fake emails Firebase Auth needs.
 // Users never see this — they only ever type a username.

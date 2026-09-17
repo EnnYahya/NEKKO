@@ -1,14 +1,16 @@
 // ============================================================
-// POSTS & FEED LOGIC — text posts only (no Storage / no free
-// Firebase Storage plan needed)
+// POSTS & FEED LOGIC
 // ============================================================
 
-// ---------- CREATE POST ----------
+// ---------- CREATE POST (text-only — no Firebase Storage on the free plan) ----------
 async function createPost(user, profile, text) {
   const cleanText = (text || "").trim();
 
   if (!cleanText) {
     throw new Error("Write something first.");
+  }
+  if (cleanText.length > 2000) {
+    throw new Error("Post is too long (max 2000 characters).");
   }
 
   await db.collection("posts").add({

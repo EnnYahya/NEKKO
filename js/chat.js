@@ -49,6 +49,30 @@ async function startConversationByUsername(currentUser, currentProfile, otherUse
   return conversationId;
 }
 
+// ---------- START OR OPEN A CONVERSATION BY UID (used from a profile page) ----------
+async function startConversationByUid(currentUser, currentProfile, otherUid, otherUsername) {
+  if (otherUid === currentUser.uid) {
+    throw new Error("You can't message yourself.");
+  }
+  const conversationId = makeConversationId(currentUser.uid, otherUid);
+  const convoRef = db.collection("conversations").doc(conversationId);
+  const convoDoc = await convoRef.get();
+
+  if (!convoDoc.exists) {
+    await convoRef.set({
+      participants: [currentUser.uid, otherUid],
+      participantUsernames: {
+        [currentUser.uid]: currentProfile.username,
+        [otherUid]: otherUsername
+      },
+      lastMessage: "",
+      lastMessageAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  return conversationId;
+}
+
 // ---------- LIVE LIST OF MY CONVERSATIONS ----------
 // Note: sorting is done client-side (not via .orderBy in the query) to
 // avoid requiring a manual Firestore composite index — array-contains

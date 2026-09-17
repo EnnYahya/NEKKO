@@ -24,12 +24,7 @@ html, body {
 
 body {
   font-family: 'Nunito', sans-serif;
-  background-color: var(--cream);
-  background-image: linear-gradient(rgba(245,237,216,0.85), rgba(245,237,216,0.85)), url('../images/site-background.jpg');
-  background-repeat: no-repeat;
-  background-position: center top;
-  background-size: cover;
-  background-attachment: fixed;
+  background: var(--cream);
   color: var(--ink);
   min-height: 100vh;
   display: flex;
@@ -339,16 +334,69 @@ h1, h2, h3, .display {
 .composer-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--line);
 }
 
+.composer-attach {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attach-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal-dark);
+  cursor: pointer;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: rgba(31,111,107,0.08);
+}
+
+.attach-label:hover { background: rgba(31,111,107,0.15); }
+.attach-label input { display: none; }
+
+.file-chip {
+  font-size: 12px;
+  color: var(--ink);
+  opacity: 0.7;
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: none;
+}
+
+.file-chip.show { display: inline-block; }
+
 .composer .btn {
   width: auto;
   padding: 9px 22px;
   font-size: 14px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+  display: none;
+}
+
+.progress-bar.show { display: block; }
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gold);
+  width: 0%;
+  transition: width 0.15s ease;
 }
 
 /* ---------- Post card ---------- */
@@ -391,11 +439,7 @@ h1, h2, h3, .display {
   font-weight: 700;
   color: var(--teal-dark);
   font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
 }
-
-.post-meta .post-username:hover { text-decoration: underline; }
 
 .post-meta .post-time {
   font-size: 12px;
@@ -409,6 +453,14 @@ h1, h2, h3, .display {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.post-media {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  display: block;
+  background: #000;
 }
 
 .post-actions {
@@ -481,11 +533,7 @@ h1, h2, h3, .display {
   font-weight: 700;
   color: var(--teal-dark);
   margin-right: 6px;
-  text-decoration: none;
-  cursor: pointer;
 }
-
-.comment-bubble .comment-username:hover { text-decoration: underline; }
 
 .comment-form {
   display: flex;
@@ -618,8 +666,7 @@ h1, h2, h3, .display {
 .convo-item .post-avatar { width: 34px; height: 34px; font-size: 13px; }
 
 .convo-info { min-width: 0; flex: 1; }
-.convo-username { font-weight: 700; font-size: 13.5px; color: var(--teal-dark); text-decoration: none; }
-.convo-username:hover { text-decoration: underline; }
+.convo-username { font-weight: 700; font-size: 13.5px; color: var(--teal-dark); }
 .convo-preview {
   font-size: 12px;
   color: var(--ink);
@@ -747,6 +794,153 @@ h1, h2, h3, .display {
 
 .nav-link:hover { opacity: 1; text-decoration: underline; }
 
+/* ---------- Stories ---------- */
+.stories-bar {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding: 4px 2px 18px;
+  margin-bottom: 6px;
+}
+
+.story-circle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  cursor: pointer;
+  width: 66px;
+}
+
+.story-ring {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  padding: 3px;
+  background: linear-gradient(135deg, var(--gold), var(--red));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-ring.add-story {
+  background: var(--line);
+}
+
+.story-ring-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--teal);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  border: 2px solid var(--cream-soft);
+  overflow: hidden;
+}
+
+.story-ring.add-story .story-ring-inner {
+  background: var(--cream-soft);
+  color: var(--teal-dark);
+  font-size: 26px;
+}
+
+.story-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 66px;
+}
+
+.story-viewer {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.story-viewer.show { display: flex; }
+
+.story-progress-row {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  gap: 5px;
+  z-index: 3;
+}
+
+.story-progress-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.story-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #fff;
+}
+
+.story-progress-track.done .story-progress-fill { width: 100%; }
+
+.story-viewer-header {
+  position: absolute;
+  top: 28px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+  color: #fff;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.story-viewer-close {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+
+.story-viewer-media {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.story-tap-zone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 40%;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.story-tap-zone.left { left: 0; }
+.story-tap-zone.right { right: 0; }
+
 /* ---------- Games hub ---------- */
 .games-shell {
   max-width: 700px;
@@ -800,7 +994,7 @@ h1, h2, h3, .display {
   opacity: 0.65;
 }
 
-/* ---------- Game screen (chess) ---------- */
+/* ---------- Game screens (snake / barricade) ---------- */
 .game-screen {
   max-width: 480px;
   margin: 0 auto;
@@ -810,6 +1004,36 @@ h1, h2, h3, .display {
   text-align: center;
 }
 
+.game-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  font-family: 'Fredoka', sans-serif;
+  color: var(--teal-dark);
+}
+
+.game-hud .score-box {
+  background: var(--cream-soft);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.game-hud .score-box .num {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+canvas#game-canvas {
+  background: var(--ink);
+  border-radius: 14px;
+  max-width: 100%;
+  touch-action: none;
+  box-shadow: var(--shadow);
+}
+
 .game-controls-hint {
   font-size: 12.5px;
   color: var(--ink);
@@ -817,41 +1041,56 @@ h1, h2, h3, .display {
   margin-top: 12px;
 }
 
-/* ---------- Chess opponent picker + status ---------- */
-.chess-picker {
-  background: var(--cream-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 20px;
-  text-align: left;
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(58,46,34,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  flex-direction: column;
+  gap: 12px;
+  color: #fff;
+  z-index: 5;
 }
 
-.chess-picker p {
-  font-size: 13.5px;
-  opacity: 0.7;
-  margin: 0 0 14px;
+.game-overlay.show { display: flex; }
+
+.game-overlay h2 {
+  color: #fff;
+  font-size: 22px;
 }
 
-.chess-vs {
-  font-family: 'Fredoka', sans-serif;
-  font-weight: 600;
-  color: var(--teal-dark);
-  margin-bottom: 4px;
-}
-
-.chess-vs a { color: var(--teal-dark); }
-
-.chess-turn-badge {
+.game-canvas-wrap {
+  position: relative;
   display: inline-block;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 12px;
-  border-radius: 20px;
-  margin-bottom: 10px;
+  width: 100%;
 }
 
-.chess-turn-badge.mine { background: rgba(31,111,107,0.15); color: var(--teal-dark); }
-.chess-turn-badge.theirs { background: rgba(58,46,34,0.08); color: var(--ink); opacity: 0.75; }
+.mobile-dpad {
+  display: none;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 6px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.mobile-dpad button {
+  background: var(--teal);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.mobile-dpad button:active { background: var(--teal-dark); }
+
+@media (max-width: 520px) {
+  .mobile-dpad { display: grid; }
+}
 
 /* ---------- Chess ---------- */
 .chess-board {
@@ -902,83 +1141,12 @@ h1, h2, h3, .display {
   min-height: 24px;
 }
 
-/* ---------- Profile page ---------- */
-.profile-shell {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 40px 16px 60px;
-  position: relative;
-  z-index: 1;
+/* Usernames/avatars are now links to profile.html — reset default <a> styling
+   so they keep looking the same as before, just clickable. */
+.post-avatar, .comment-avatar, .post-username, .comment-username {
+  text-decoration: none;
+  cursor: pointer;
 }
-
-.profile-card {
-  background: var(--cream-soft);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 32px 28px;
-  text-align: center;
-}
-
-.profile-avatar {
-  width: 84px;
-  height: 84px;
-  border-radius: 50%;
-  background: var(--teal);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Fredoka', sans-serif;
-  font-weight: 700;
-  font-size: 34px;
-  margin: 0 auto 16px;
-  box-shadow: 0 6px 14px rgba(31,111,107,0.35);
-}
-
-.profile-username {
-  font-family: 'Fredoka', sans-serif;
-  font-size: 22px;
-  color: var(--teal-dark);
-  margin-bottom: 6px;
-}
-
-.profile-bio {
-  font-size: 14px;
-  color: var(--ink);
-  opacity: 0.8;
-  line-height: 1.5;
-  margin-bottom: 22px;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.profile-bio.empty { opacity: 0.45; font-style: italic; }
-
-.profile-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.profile-actions .btn { width: auto; flex: 1; padding: 11px; font-size: 14px; }
-
-.profile-edit textarea {
-  width: 100%;
-  min-height: 90px;
-  border: 1.5px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  resize: vertical;
-  margin-bottom: 14px;
-}
-
-.profile-edit textarea:focus { outline: none; border-color: var(--teal); }
-
-.profile-not-found {
-  text-align: center;
-  padding: 60px 20px;
-  opacity: 0.7;
+.post-username:hover, .comment-username:hover {
+  text-decoration: underline;
 }

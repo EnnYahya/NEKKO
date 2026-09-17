@@ -1,9 +1,7 @@
-# Nekko — Setup Guide
+# Nekko — Setup Guide (Phase 1: Accounts)
 
-This gets your site live with accounts, a text feed, direct messages,
-profile pages, and online chess — using GitHub Pages (hosting) +
-Firebase (accounts + database), both free. No Firebase Storage is
-used anywhere, so you never need to put a card on file.
+This gets your site live with working sign up / log in / log out, using
+GitHub Pages (hosting) + Firebase (accounts + database), both free.
 
 ---
 
@@ -27,8 +25,34 @@ used anywhere, so you never need to put a card on file.
 12. Open **js/firebase-config.js** in this folder and paste your real values in,
     replacing the `PASTE_YOUR_...` placeholders.
 
-That's it for Firebase — accounts and the database are ready. You do
-**not** need to enable Storage or Billing/Blaze for any of this to work.
+That's it for Firebase — accounts and the database are ready.
+
+---
+
+## Part C — Enable Storage (needed for photo/video posts — Phase 2)
+
+1. In the Firebase Console left sidebar, click **Build > Storage** → **Get started**.
+2. Choose **Start in production mode** → pick the same location as your
+   Firestore database → **Done**.
+3. Click the **Rules** tab at the top.
+4. Delete everything there and paste in the entire contents of
+   **storage.rules** (included in this folder). Click **Publish**.
+
+This lets people upload photos/videos to their posts, while blocking
+anyone from uploading into someone else's folder or uploading huge files.
+
+⚠️ **Note on Firebase's free tier:** Storage and Firestore both have
+generous free quotas, but Storage's free tier requires your project to be
+on the **Blaze (pay-as-you-go)** plan with a billing method attached —
+Firebase still won't charge you unless you go far past the free limits
+(5GB storage, 1GB/day downloads), but it does ask for a card on file.
+If you'd rather avoid that for now, you can skip file uploads and use
+text-only posts — everything else in Phase 2 (posting, comments, sharing)
+still works without Storage enabled.
+
+Also update your **firestore.rules** (Rules tab under Firestore Database,
+not Storage) with the newer version in this folder — it now also covers
+posts and comments.
 
 ---
 
@@ -38,7 +62,9 @@ That's it for Firebase — accounts and the database are ready. You do
 2. Click the **+** icon top right → **New repository**.
 3. Name it (e.g. `nekko`), keep it **Public**, click **Create repository**.
 4. On the new repo page, click **uploading an existing file**.
-5. Drag in **every file and folder** listed below.
+5. Drag in **every file and folder** from this Nekko project
+   (index.html, signup.html, dashboard.html, forgot-password.html,
+   the css folder, the js folder, the images folder — everything).
 6. Scroll down, click **Commit changes**.
 7. Go to the repo's **Settings** tab → **Pages** (left sidebar).
 8. Under "Branch," choose **main** and folder **/ (root)** → **Save**.
@@ -47,42 +73,17 @@ That's it for Firebase — accounts and the database are ready. You do
 
 Send that link to anyone — it works on phone or PC, no installs needed.
 
-### Files to upload
-
-```
-index.html
-signup.html
-forgot-password.html
-dashboard.html
-chat.html
-profile.html
-games.html
-chess.html
-firestore.rules
-SETUP.md
-css/style.css
-js/firebase-config.js
-js/auth.js
-js/posts.js
-js/chat.js
-js/chess-engine.js
-js/chess-online.js
-images/logo-placeholder.png
-images/site-background.jpg
-```
-
-(`storage.rules` and `js/scores.js` no longer exist — Storage isn't used.)
-
 ---
 
 ## Swapping in your own images
 
+Right now the logo is a plain placeholder circle with "N" in it.
+To use your own artwork (make sure it's art you own the rights to, or
+licensed/royalty-free):
+
 1. Put your logo image in the `images/` folder, named `logo-placeholder.png`
    (or update the filename in the HTML files if you name it something else).
-2. To change the site background, replace `images/site-background.jpg`
-   with your own picture (same filename), or edit the `background-image`
-   line in `css/style.css` to point at a different file.
-3. Re-upload the changed file to GitHub the same way as Part B, step 5.
+2. Re-upload that one file to GitHub the same way as Part B, step 5.
 
 ---
 
@@ -107,23 +108,81 @@ To see these requests:
 
 ---
 
-## What you've got
+## What's next
 
-- **Accounts** — sign up / log in / log out with just a username and password.
-- **Text feed** — post, comment, and share a direct link to any post. Everything
-  updates live for everyone on the site, no refresh needed. (Photo/video posting
-  and 24-hour stories were removed — both needed Firebase Storage, which requires
-  the paid Blaze plan even to stay within the free quota.)
-- **Direct messages** — click "💬 Chat," type a username to start a conversation,
-  or hit "💬 Message" from someone's profile. Messages sync live.
-- **Profile pages** — click any username (on a post, a comment, or in chat) to see
-  their profile: name, bio, a "Message" button, and a "Play Chess" button. On your
-  own profile, an "Edit Profile" button lets you set your bio.
-- **Chess, online** — from the Games hub or from someone's profile, start a real-time
-  chess game with them. Moves sync instantly through Firestore, so you don't need to
-  be on the same device — one game per pair of friends, and "Restart Game" resets it
-  for a rematch. Standard rules (check, checkmate, stalemate), except no castling or
-  en passant, and pawns promote straight to queen.
+All five phases are done! Nekko now has accounts, posts, chat, stories,
+and games. If you want more later — likes on posts, replies in chat,
+group chats, a real chess AI opponent, whatever — just ask and I can
+build it on top of this same foundation.
 
-If you want more later — likes on posts, group chats, a real chess AI opponent,
-re-adding photo posts once you're comfortable enabling Storage/Blaze — just ask.
+---
+
+## Phase 5 — what you got
+
+- **Games hub** (🎮 Games in the top bar) linking to three mini-games:
+- **Snake** — classic, with a personal best score saved per account
+- **Barricade** (brick-breaker) — same, with 3 lives and a saved best score
+- **Chess** — full rules including check, checkmate, and stalemate
+  detection, local pass-and-play on one device (two people take turns
+  on the same screen/phone). Note: no castling or en passant, and pawns
+  promote straight to queen — everything else is standard chess.
+
+High scores are saved to each player's own account and shown next to
+"Best" every time they play.
+
+---
+
+## Phase 4 — what you got
+
+- **Stories bar** at the top of the home feed — circles for anyone with
+  an active story, plus a "+" to add your own.
+- Tap a circle to view: auto-advances every 5 seconds, tap left/right side
+  to go back/forward, tap ✕ to close.
+- Stories **disappear from view after 24 hours** automatically (the app
+  checks the expiry time every time it loads the list).
+
+### Optional: auto-delete expired stories from the database
+
+The 24h disappearing behavior already works for everyone viewing the
+site. But without extra setup, expired story documents just sit unused
+in your database forever (harmless, but adds clutter over time). To have
+Firestore actually delete them automatically:
+
+1. Firebase Console → Firestore Database → click the **TTL** tab
+   (may be under "Indexes" or a "..." menu depending on the console layout).
+2. Click **Create policy**.
+3. Collection group: `stories`. Timestamp field: `expireAt`.
+4. Save. Firestore will now delete expired story documents within
+   ~24 hours of expiry, on its own, in the background.
+
+This step is optional — skip it if you don't see the TTL tab or don't
+want to bother; nothing breaks either way.
+
+---
+
+## Phase 3 — what you got
+
+- **Direct messages:** click "💬 Chat" in the top bar, type a username to
+  start a new conversation, and it opens a live thread.
+- **Conversation list:** every chat you've had shows on the left (or as a
+  full-screen list on phones), with a preview of the last message.
+- **Real-time:** messages appear instantly on both sides, no refresh.
+
+Note: your Firestore rules were updated again to cover conversations and
+messages — make sure you re-paste **firestore.rules** into the Firebase
+Console Rules tab after this update.
+
+---
+
+## Phase 2 — what you got
+
+- **Posting:** text, photos, or videos (up to 25MB), shown live in the feed
+  the moment they're posted — no refresh needed, for you or anyone else
+  looking at the site at the same time.
+- **Comments:** click "💬 Comments" on any post to open a live comment
+  thread under it.
+- **Share:** click "🔗 Share" to copy a direct link to that specific post
+  to your clipboard.
+
+Everything updates in real time using Firestore's live listeners, so if
+your friend posts something while you're on the page, it just appears.

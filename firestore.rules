@@ -81,11 +81,13 @@ service cloud.firestore {
         allow update, delete: if false;
       }
     }
-    // Chess games: only the two players can read/write their game.
-    // Move legality is enforced client-side by the same chess engine
-    // both players run; these rules just make sure only the two
-    // participants can touch the game document.
-    match /chess_games/{gameId} {
+    // Chess matches: only the two players in a match can read or update it.
+    // Either player can create a challenge (as long as they list themselves
+    // as one of the two players) and either player can update the board as
+    // the game is played. This trusts both players not to tamper with the
+    // board directly — fine for a friends app, same trust level as the
+    // commentCount rule above.
+    match /chess_matches/{matchId} {
       allow read: if request.auth != null && request.auth.uid in resource.data.players;
       allow create: if request.auth != null && request.auth.uid in request.resource.data.players;
       allow update: if request.auth != null && request.auth.uid in resource.data.players;

@@ -22,36 +22,22 @@
   </div>
 </div>
 
-<div class="profile-shell">
+<div class="feed-shell" style="max-width:480px;">
+  <div class="composer" id="profile-card" style="text-align:center;">
+    <div class="post-avatar" id="profile-avatar" style="width:72px; height:72px; font-size:28px; margin:0 auto 12px;">?</div>
+    <h2 id="profile-username" style="margin-bottom:4px;">Loading…</h2>
+    <p id="profile-bio" style="opacity:0.75; margin-bottom:16px;"></p>
 
-  <div id="not-found" class="profile-not-found" style="display:none;">
-    <div class="paw-big" style="font-size:44px; margin-bottom:10px;">🐾</div>
-    <h2>User not found</h2>
-    <p>No one on Nekko has that username.</p>
-  </div>
-
-  <div id="profile-card" class="profile-card" style="display:none;">
-    <div class="profile-avatar" id="avatar"></div>
-    <div class="profile-username" id="username-display"></div>
-
-    <div id="view-mode">
-      <div class="profile-bio" id="bio-display"></div>
-      <div class="profile-actions" id="visitor-actions" style="display:none;">
-        <a class="btn" id="message-btn" href="#">💬 Message</a>
-        <a class="btn btn-secondary" id="play-chess-btn" href="#">♟️ Play Chess</a>
-      </div>
-      <button class="btn btn-secondary" id="edit-btn" style="display:none;">Edit Profile</button>
+    <div id="own-profile-controls" style="display:none;">
+      <textarea id="bio-input" placeholder="Write a short bio…" maxlength="200" style="margin-bottom:10px;"></textarea>
+      <button class="btn" id="save-bio-btn">Save Bio</button>
     </div>
 
-    <div id="edit-mode" class="profile-edit" style="display:none;">
-      <textarea id="bio-input" maxlength="280" placeholder="Tell people a little about yourself…"></textarea>
-      <div style="display:flex; gap:10px;">
-        <button class="btn" id="save-bio-btn">Save</button>
-        <button class="btn btn-secondary" id="cancel-edit-btn">Cancel</button>
-      </div>
+    <div id="other-profile-controls" style="display:none; gap:10px; justify-content:center;">
+      <button class="btn" id="message-btn">💬 Message</button>
+      <button class="btn btn-secondary" id="chess-btn">♟️ Play Chess</button>
     </div>
   </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
@@ -61,7 +47,16 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/chess-engine.js"></script>
 <script>
+  const params = new URLSearchParams(window.location.search);
+  const viewedUid = params.get("uid");
+
+  let currentUser = null;
+  let currentProfile = null;
+  let viewedProfile = null;
+
   function showToast(msg) {
     const t = document.getElementById("toast");
     t.textContent = msg;
@@ -73,88 +68,105 @@
     return (username || "?").charAt(0).toUpperCase();
   }
 
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
+  requireLogin(async (user) => {
+    currentUser = user;
+    const myDoc = await db.collection("users").doc(user.uid).get();
+    currentProfile = myDoc.data() || { username: "friend" };
 
-  let profileUid = null;
-  let isOwnProfile = false;
+    if (!viewedUid) {
+      document.getElementById("profile-username").textContent = "No user specified";
+      return;
+    }
 
-  function enterEditMode(currentBio) {
-    document.getElementById("view-mode").style.display = "none";
-    document.getElementById("edit-mode").style.display = "block";
-    document.getElementById("bio-input").value = currentBio || "";
-  }
+    const targetDoc = await db.collection("users").doc(viewedUid).get();
+    if (!targetDoc.exists) {
+      document.getElementById("profile-username").textContent = "User not found";
+      return;
+    }
+    viewedProfile = targetDoc.data();
 
-  function exitEditMode() {
-    document.getElementById("view-mode").style.display = "block";
-    document.getElementById("edit-mode").style.display = "none";
-  }
+    document.getElementById("profile-avatar").textContent = initials(viewedProfile.username);
+    document.getElementById("profile-username").textContent = viewedProfile.username;
+    document.getElementById("profile-bio").textContent = viewedProfile.bio || "No bio yet.";
 
-  document.getElementById("cancel-edit-btn").addEventListener("click", exitEditMode);
-
-  document.getElementById("save-bio-btn").addEventListener("click", async () => {
-    const newBio = document.getElementById("bio-input").value.trim();
-    try {
-      await db.collection("users").doc(profileUid).update({ bio: newBio });
-      document.getElementById("bio-display").textContent = newBio || "No bio yet.";
-      document.getElementById("bio-display").className = newBio ? "profile-bio" : "profile-bio empty";
-      exitEditMode();
-      showToast("Profile updated!");
-    } catch (err) {
-      showToast(err.message);
+    if (viewedUid === currentUser.uid) {
+      document.getElementById("own-profile-controls").style.display = "block";
+      document.getElementById("bio-input").value = viewedProfile.bio || "";
+    } else {
+      document.getElementById("other-profile-controls").style.display = "flex";
     }
   });
 
-  document.getElementById("edit-btn").addEventListener("click", () => {
-    enterEditMode(document.getElementById("bio-display").dataset.raw || "");
+  document.getElementById("save-bio-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("save-bio-btn");
+    const newBio = document.getElementById("bio-input").value.trim();
+    setLoading(btn, true, "Save Bio");
+    try {
+      await db.collection("users").doc(currentUser.uid).update({ bio: newBio });
+      document.getElementById("profile-bio").textContent = newBio || "No bio yet.";
+      showToast("Bio updated!");
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      setLoading(btn, false, "Save Bio");
+    }
+  });
+
+  document.getElementById("message-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("message-btn");
+    setLoading(btn, true, "💬 Message");
+    try {
+      const conversationId = await startConversationByUid(currentUser, currentProfile, viewedUid, viewedProfile.username);
+      window.location.href = `chat.html?conversation=${conversationId}&with=${encodeURIComponent(viewedProfile.username)}`;
+    } catch (err) {
+      showToast(err.message);
+      setLoading(btn, false, "💬 Message");
+    }
+  });
+
+  document.getElementById("chess-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("chess-btn");
+    setLoading(btn, true, "♟️ Play Chess");
+    try {
+      // Reuse an existing, still-active match against this same person if
+      // one exists, instead of spawning a duplicate game every click.
+      const existing = await db.collection("chess_matches")
+        .where("players", "array-contains", currentUser.uid)
+        .where("status", "==", "active")
+        .get();
+      const match = existing.docs.find(doc => doc.data().players.includes(viewedUid));
+
+      let matchId;
+      if (match) {
+        matchId = match.id;
+      } else {
+        const newMatch = await db.collection("chess_matches").add({
+          players: [currentUser.uid, viewedUid],
+          usernames: {
+            [currentUser.uid]: currentProfile.username,
+            [viewedUid]: viewedProfile.username
+          },
+          whiteId: currentUser.uid,
+          blackId: viewedUid,
+          board: JSON.stringify(createInitialBoard()),
+          turn: "w",
+          status: "active",
+          result: null,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        matchId = newMatch.id;
+      }
+      window.location.href = `chess.html?match=${matchId}`;
+    } catch (err) {
+      showToast(err.message);
+      setLoading(btn, false, "♟️ Play Chess");
+    }
   });
 
   document.getElementById("logout-btn").addEventListener("click", async () => {
     await handleLogout();
     window.location.href = "index.html";
-  });
-
-  requireLogin(async (user) => {
-    const params = new URLSearchParams(window.location.search);
-    const username = (params.get("u") || "").trim().toLowerCase();
-
-    if (!username) {
-      window.location.href = "dashboard.html";
-      return;
-    }
-
-    const usernameDoc = await db.collection("usernames").doc(username).get();
-    if (!usernameDoc.exists) {
-      document.getElementById("not-found").style.display = "block";
-      return;
-    }
-
-    profileUid = usernameDoc.data().uid;
-    isOwnProfile = profileUid === user.uid;
-
-    const profileDoc = await db.collection("users").doc(profileUid).get();
-    const profile = profileDoc.data() || { username };
-
-    document.getElementById("avatar").textContent = initials(profile.username);
-    document.getElementById("username-display").textContent = "@" + profile.username;
-
-    const bioEl = document.getElementById("bio-display");
-    bioEl.dataset.raw = profile.bio || "";
-    bioEl.textContent = profile.bio || "No bio yet.";
-    bioEl.className = profile.bio ? "profile-bio" : "profile-bio empty";
-
-    if (isOwnProfile) {
-      document.getElementById("edit-btn").style.display = "block";
-    } else {
-      document.getElementById("visitor-actions").style.display = "flex";
-      document.getElementById("message-btn").href = `chat.html?u=${encodeURIComponent(profile.username)}`;
-      document.getElementById("play-chess-btn").href = `chess.html?uid=${encodeURIComponent(profileUid)}&name=${encodeURIComponent(profile.username)}`;
-    }
-
-    document.getElementById("profile-card").style.display = "block";
   });
 </script>
 </body>

@@ -17,6 +17,7 @@
   <div class="topbar-user">
     <a class="nav-link" href="games.html">🎮 Games</a>
     <a class="nav-link" href="chat.html">💬 Chat</a>
+    <a class="nav-link" id="my-profile-link" href="#">👤 My Profile</a>
     <span id="welcome-text">Welcome!</span>
     <button id="logout-btn">Log Out</button>
   </div>
@@ -27,6 +28,7 @@
   <div class="composer">
     <textarea id="post-text" placeholder="What's on your mind?" maxlength="2000"></textarea>
     <div class="composer-footer">
+      <span></span>
       <button class="btn" id="post-btn">Post</button>
     </div>
   </div>
@@ -66,18 +68,14 @@
     return (username || "?").charAt(0).toUpperCase();
   }
 
-  function profileLink(username) {
-    return `profile.html?u=${encodeURIComponent(username)}`;
-  }
-
   function renderPost(post) {
     const isOpen = openComments.has(post.id);
     return `
       <div class="post-card" data-post-id="${post.id}">
         <div class="post-header">
-          <a class="post-avatar" href="${profileLink(post.authorUsername)}" style="text-decoration:none;">${initials(post.authorUsername)}</a>
+          <a class="post-avatar" href="profile.html?uid=${post.authorId}">${initials(post.authorUsername)}</a>
           <div class="post-meta">
-            <a class="post-username" href="${profileLink(post.authorUsername)}">${escapeHtml(post.authorUsername)}</a>
+            <a class="post-username" href="profile.html?uid=${post.authorId}">${escapeHtml(post.authorUsername)}</a>
             <div class="post-time">${timeAgo(post.createdAt)}</div>
           </div>
         </div>
@@ -100,9 +98,9 @@
   function renderComment(c) {
     return `
       <div class="comment-item">
-        <a class="comment-avatar" href="${profileLink(c.authorUsername)}" style="text-decoration:none;">${initials(c.authorUsername)}</a>
+        <a class="comment-avatar" href="profile.html?uid=${c.authorId}">${initials(c.authorUsername)}</a>
         <div class="comment-bubble">
-          <a class="comment-username" href="${profileLink(c.authorUsername)}">${escapeHtml(c.authorUsername)}</a>${escapeHtml(c.text)}
+          <a class="comment-username" href="profile.html?uid=${c.authorId}">${escapeHtml(c.authorUsername)}</a>${escapeHtml(c.text)}
         </div>
       </div>
     `;
@@ -148,6 +146,7 @@
     const doc = await db.collection("users").doc(user.uid).get();
     currentProfile = doc.data() || { username: "friend" };
     document.getElementById("welcome-text").textContent = "Hey, " + currentProfile.username + "!";
+    document.getElementById("my-profile-link").href = "profile.html?uid=" + user.uid;
 
     listenToFeed((posts) => {
       const feedEl = document.getElementById("feed");

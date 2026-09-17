@@ -2,7 +2,10 @@
 // POSTS & FEED LOGIC
 // ============================================================
 
-// ---------- CREATE POST (text-only — no Firebase Storage on the free plan) ----------
+// ---------- DELETE POST (author, or admin) ----------
+async function deletePost(postId) {
+  await db.collection("posts").doc(postId).delete();
+}
 async function createPost(user, profile, text) {
   const cleanText = (text || "").trim();
 

@@ -55,7 +55,13 @@ async function handleSignup(username, password) {
     displayName: cleanUsername,
     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
     bio: "",
-    avatarUrl: ""
+    avatarUrl: "",
+    // The one account named exactly "admin" gets moderator powers
+    // (deleting posts, viewing the username list). Note this can
+    // never include seeing anyone's password — Firebase Auth stores
+    // passwords as one-way hashes and never exposes them to anyone,
+    // including admins, by design.
+    isAdmin: cleanUsername === "admin"
   });
 
   return uid;

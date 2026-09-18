@@ -27,6 +27,10 @@
 
   <div class="chess-board" id="board"></div>
 
+  <div style="margin-top:16px; text-align:center;">
+    <button class="btn" id="play-again-btn" style="display:none; width:auto; padding:8px 20px;">🔁 Play Again</button>
+  </div>
+
   <div class="game-controls-hint">Tap a piece to see its legal moves, then tap a highlighted square to move.<br>No castling / en passant — pawns promote straight to queen.</div>
 </div>
 
@@ -56,6 +60,7 @@
   const statusEl = document.getElementById("status-text");
   const opponentEl = document.getElementById("opponent-text");
   const toastEl = document.getElementById("toast");
+  const playAgainBtn = document.getElementById("play-again-btn");
 
   function showToast(msg) {
     toastEl.textContent = msg;
@@ -218,6 +223,12 @@
       selected = null;
       legalTargets = [];
 
+      playAgainBtn.style.display = gameOver ? "inline-block" : "none";
+      if (!gameOver) {
+        playAgainBtn.disabled = false;
+        playAgainBtn.textContent = "🔁 Play Again";
+      }
+
       render();
       if (gameOver) {
         if (matchData.result === "stalemate") {
@@ -234,6 +245,30 @@
       console.error("Match listener error:", err);
       statusEl.textContent = "Couldn't load this match.";
     });
+  });
+
+  playAgainBtn.addEventListener("click", async () => {
+    if (!matchData) return;
+    playAgainBtn.disabled = true;
+    playAgainBtn.textContent = "Starting…";
+    try {
+      // Swap who plays White so the previous loser gets first move this time.
+      const newWhiteId = matchData.blackId;
+      const newBlackId = matchData.whiteId;
+      await db.collection("chess_matches").doc(matchId).update({
+        board: JSON.stringify(createInitialBoard()),
+        turn: "w",
+        status: "active",
+        result: null,
+        whiteId: newWhiteId,
+        blackId: newBlackId,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch (err) {
+      showToast("Couldn't start a new game: " + err.message);
+      playAgainBtn.disabled = false;
+      playAgainBtn.textContent = "🔁 Play Again";
+    }
   });
 </script>
 </body>
